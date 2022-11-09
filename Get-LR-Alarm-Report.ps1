@@ -50,6 +50,7 @@ param(
 Import-Module logrhythm.tools
 
 # Array of Alarm rules that should not be included in the count.
+# The alarm rules are case sensitive and so must make sure to use it in the correct case.
 
 $ignoreAlarm = @("Networkx",
                  "third rule"
@@ -88,13 +89,22 @@ $endDate = Get-Date $enddate -Format ("yyyy-MM-ddThh:mm:ss")
 	Also, need to sort based on alarmId and make sure sure all entries are unique.
 #>
 
-$allAlarms = Get-LrAlarms -ResultsOnly -DateInserted $alarmDate| Where-Object dateInserted -ge $startDate | Where-Object dateInserted -le $endDate | sort-object alarmId -unique
+#$allAlarms = Get-LrAlarms -ResultsOnly -DateInserted $alarmDate| Where-Object dateInserted -ge $startDate | Where-Object dateInserted -le $endDate | sort-object alarmId -unique
+
+$allAlarms = Get-LrAlarms -ResultsOnly -DateInserted $alarmDate
+
+if ($allAlarms.Error -eq $true) {
+    return $allAlarms
+} else 
+{
+    $allAlarms = $allAlarms | Where-Object dateInserted -ge $startDate | Where-Object dateInserted -le $endDate | sort-object alarmId -unique
+}
 
 # Do not include any alarms in cluded in the IgnoreAlarms  array
 foreach ($ignore in $ignorealarm)
-    {
-        $allAlarms = $allAlarms | Where-Object alarmRuleName -CNotlike "*$ignore*"
-    }
+{
+    $allAlarms = $allAlarms | Where-Object alarmRuleName -CNotlike "*$ignore*"
+}
 
 
 <# Now collect alarms of each status types (types 1-9)
